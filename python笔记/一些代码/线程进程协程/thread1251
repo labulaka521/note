@@ -1,0 +1,13 @@
+import threading
+from thread_12.5_1 import acquire
+def philosopher(left,right):
+    while True:
+        with acquire(left, right):
+            print(threading.currentThread(),'eating')
+
+nsticks = 5
+chopsticks = [ threading.Lock() for n in range(nsticks) ]
+for n in range(nsticks):
+    t = threading.Thread(target=philosopher, args=(chopsticks[n],chopsticks[(n+1) % nsticks]))
+    t.start()
+
