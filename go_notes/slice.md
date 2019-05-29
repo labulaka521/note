@@ -92,3 +92,33 @@ ptr|len|cap
 长度是切片引用的元素数。容量是底层数组中元素的数量。
 
 切片不会复制切片的数据。它创建一个指向原始数组的新切片值。修改重新切片的元素（而不是切片本身）会修改原始切片的元素
+
+
+# growslice函数 
+`/usr/local/go/src/runtime/slice.go:line:98`  
+
+```go
+func growslice(et *_type, old slice, cap int) slice {
+    newcap := old.cap           // 旧的容量
+	doublecap := newcap + newcap        // 旧容量两杯
+	if cap > doublecap {        // 如果期望的容量大于当前容量的两倍 则直接使用期望容量
+		newcap = cap
+	} else {                
+		if old.len < 1024 {     // 如果当前容量小于1024 则直接将容量翻倍
+			newcap = doublecap
+		} else {
+			// Check 0 < newcap to detect overflow
+			// and prevent an infinite loop.
+			for 0 < newcap && newcap < cap {        // 如果当前容量大于1024则每次增加当前容量的1/4 直到新容量大于期望容量
+				newcap += newcap / 4
+			}
+			// Set newcap to the requested cap when
+			// the newcap calculation overflowed.
+			if newcap <= 0 {
+				newcap = cap
+			}
+		}
+    }
+}
+```
+
