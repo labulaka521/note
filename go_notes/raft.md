@@ -22,4 +22,8 @@ Raft将一致性算法分解成了几个关键模块
 ### Raft 基础
 每个服务器接单都处于这三个状态之一
 - 领导人
-- 
+- 跟随者
+- 候选人
+
+![](https://github.com/maemual/raft-zh_cn/raw/master/images/raft-%E5%9B%BE4.png)
+服务器状态
