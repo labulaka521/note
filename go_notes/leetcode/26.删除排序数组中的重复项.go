@@ -54,7 +54,8 @@
  * 
  */
 func removeDuplicates(nums []int) int {
-	var cur int	//
+	var cur int	// 记录第一个不同的树
+	var 
 	
 }
 
