@@ -54,6 +54,7 @@
  * 
  */
 func removeDuplicates(nums []int) int {
-    var 
+	var cur int	//
+	
 }
 
