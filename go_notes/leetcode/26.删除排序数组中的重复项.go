@@ -54,8 +54,21 @@
  * 
  */
 func removeDuplicates(nums []int) int {
-	var cur int	// 记录第一个不同的树
-	var 
-	
+	// find往前寻找不同的数 cur记录这个数 当find发现一个不同的数时 
+	// 将cur+1 指向的值设置为这个新的值 然后find继续往后直到再次遇到一个不同的数 
+	// 当find < len(nums) 这个条件不符合时 就已经将nums寻找完毕退出循环 返回cur+1的值
+	if len(nums) <= 1{
+		return len(nums)
+	}
+	cur := 0 // 记录第一个不同的数
+	find := 1
+	for find < len(nums)  {
+		if nums[find] != nums[cur] {		// 出现了一个不相同的数字
+			cur ++
+			nums[cur] = nums[find]
+		}
+		find ++
+	}
+	return cur + 1
 }
 
