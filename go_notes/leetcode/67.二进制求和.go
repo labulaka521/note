@@ -18,6 +18,7 @@
 			res = append(res, 0+add)
 			add = 1
 		} else {
+			// 
 			if total+add == 2 {
 				add = 1
 				res = append(res, 0)
