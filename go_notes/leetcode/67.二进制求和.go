@@ -18,7 +18,7 @@
 			res = append(res, 0+add)
 			add = 1
 		} else {
-			// 
+			// 如果相加为2的话
 			if total+add == 2 {
 				add = 1
 				res = append(res, 0)
