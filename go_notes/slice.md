@@ -15,11 +15,10 @@ struct Slice
     uintgo   len;
     uintgo   cap;
 };
-
 ```
 
 切片的内部实现
-[click](https://www.dropbox.com/s/r4vferjytzqmcze/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202019-02-26%2010.38.35.png?dl=0)
+![click](../image/slice1.png)
 
 ## 创建和初始化
 
@@ -35,19 +34,21 @@ slice := make([]string, 3, 5)
 
 ### nil切片  
 `var slice []int` 
-内部实现: [click](https://www.dropbox.com/s/drmyrr8h8venz6r/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202019-02-26%2010.50.43.png?dl=0)   
+
+内部实现: ![click](../image/slice2.png)   
 
 **常用于函数要求返回一个切片但是发生异常的时候**  
 
 共享同一底层数组的两个切片
-![](https://ws1.sinaimg.cn/large/005Oh4GZly1g1lz7ohxfzj30sy0iygob.jpg)
+![](../image/slice.jpg)
 
 `newSlice无法访问到它所指向的底层数组的第一个元素的部分`
 
 ### 声明空切片  
 `slice := make([]int, 0)`  
 `slice := []int{}`  
- 内部实现: [click](https://www.dropbox.com/s/bxdbu9y08ex9e2v/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202019-02-26%2010.51.32.png?dl=0)
+
+ 内部实现: ![click](../image/slice3.png)
 
 创建一个新的切片就是把底层数组切出一部分
 
@@ -62,7 +63,8 @@ range创建了每个元素的副本
 
 ### 多维切片  
 `slice:= [][]int{{10}, {100, 200}}`  
-内部实现:[click](https://www.dropbox.com/s/poai7i86hyhkij2/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202019-02-26%2011.35.04.png?dl=0)
+内部实现:
+![click](../image/slice4.png)
 
 在函数见传递切片就是要在函数间以值的方式传递切片。由于切片的尺寸很小，在函数间复制和传递切片成本也很低。
 
