@@ -1,6 +1,6 @@
 # Go Micro
 
-![](../image/go-micro.svg)
+![](../../image/go-micro.svg)
 
 ## Registry 注册模块
 Registry注册模块提供可插拔的服务注册和发现功能
