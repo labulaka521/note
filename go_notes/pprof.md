@@ -9,12 +9,15 @@ pprof的工作方式是使用画像(profiles)
 
 go有几个内置画像供我们在常见情况下使用
 
-- goroutinue - 所有当前的goroutines的堆栈跟踪
-- heap - 活动对象的内存分配的样本
-- allocs - 过去所有内存分配的样本
-- threadcreate - 导致创建新OS线程的堆栈跟踪
-- block - 导致阻塞同步源于的堆栈跟踪
-- mutex - 争用互斥持有者的堆栈跟踪
+- allocs：过去所有内存分配的样本
+- block：导致阻塞同步原语的堆栈跟踪
+- cmdline：当前程序的命令行调用
+- goroutine：堆叠所有当前goroutine的痕迹
+- heap：活动对象的内存分配示例。 您可以指定gc GET参数以在获取堆样本之前运行GC。
+- mutex：堆叠争用互斥体持有者的痕迹
+- profile：CPU配置文件。 您可以在秒GET参数中指定持续时间。 获取配置文件后，使用go tool pprof命令调查配置文件。
+- threadcreate：导致创建新OS线程的堆栈跟踪
+- trace：当前程序的执行跟踪。 您可以在秒GET参数中指定持续时间。 获取跟踪文件后，使用go tool trace命令调查跟踪。
 
 ### 堆
 操作系统存储代码中对象占用内存的地方，这块内存随后会被“垃圾回收”，或者在飞垃圾回收语言中手动释放
@@ -94,7 +97,7 @@ func() {
 go tool pprof --http=:8081 http://127.0.0.1:8080/debug/pprof/heap
 # 自动打开浏览器 有多种查看程序占用内存的方式 就可以定位到程序的哪一块使用的内存比较多
 
-查看程序占用的
+查看程序占用的CPU
 go tool pprof --http=:8081 http://127.0.0.1:8080/debug/pprof/profile
 ## 与上面一样
 ```
