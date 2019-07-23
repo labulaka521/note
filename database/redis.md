@@ -410,3 +410,17 @@ max-slaves-max-log 10
 `down-after-milliseconds 毫秒`值小于1s，哨兵会每隔这么多s发送一个`PING`命令，大于1s则每一秒发送`PING`命令
 
 哨兵的法定票数`quorum`设置为`N/2+1`(N为哨兵节点数量)
+
+
+# 应用场景
+
+## 缓存
+## 消息队列
+## 时间轴
+## 排行榜
+## 计数器
+## 分布式锁
+  - EX|PX 设置键的过期时间(秒|毫秒)
+  - NX|XX：当设置为NX时，仅当 key 存在时才进行操作，设置为XX时，仅当 key 不存在才会进行操作  
+  `set key "lock" EX 1 XX`
+  返回`true`就是获取了锁

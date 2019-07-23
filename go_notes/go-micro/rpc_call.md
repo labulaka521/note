@@ -767,7 +767,7 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 		endpoint:    req.msg.Endpoint,
 		body:        req.msg.Body,
 	}
-
+	// 是否是流式rpc
 	if !mtype.stream {
 		fn := func(ctx context.Context, req Request, rsp interface{}) error {
 			returnValues = function.Call([]reflect.Value{s.rcvr, mtype.prepareContext(ctx), reflect.ValueOf(argv.Interface()), reflect.ValueOf(rsp)})
@@ -780,12 +780,12 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 			return nil
 		}
 
-		// execute handler
+		// 执行handler
 		if err := fn(ctx, r, replyv.Interface()); err != nil {
 			return err
 		}
 
-		// send response
+		// 发送
 		return router.sendResponse(sending, req, replyv.Interface(), cc, true)
 	}
 
@@ -799,7 +799,6 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 		id:      req.msg.Id,
 	}
 
-	// 调用方法
 	fn := func(ctx context.Context, req Request, stream interface{}) error {
 		returnValues = function.Call([]reflect.Value{s.rcvr, mtype.prepareContext(ctx), reflect.ValueOf(stream)})
 		if err := returnValues[0].Interface(); err != nil {

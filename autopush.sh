@@ -1,6 +1,6 @@
 export LANG=en_US.UTF-8
 pidfile=/tmp/autopush.pid
-cd /Users/wanglitao/Dropbox/note
+cd /Users/wanglitao/OneDrive/note
 
 case $1 in 
     start)
