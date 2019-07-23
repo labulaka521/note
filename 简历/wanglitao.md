@@ -23,7 +23,7 @@
 - 封装`Go`官方的log库，实现了日志等级、日志大小功能[logging](https://github.com/labulaka521/logging)
 
 - 参与开源项目  
-  [netmiko](https://github.com/ktbyers/netmiko) 修复了执行交换机命令命令不支持非ASCII码的问题  
+  [netmiko](https://github.com/ktbyers/netmiko) 修复了执行交换机命令不支持非ASCII码的问题  
   [gin-pprof](https://github.com/gin-contrib/pprof)  
 
 ## 个人技能
