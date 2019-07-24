@@ -61,6 +61,7 @@ func isBalanced(root *TreeNode) bool {
 	if root == nil {
 		return
 	}
+
 	return math.Abs(treeHeight(root.Left) - treeHeight(root.Right)) <= 1 
 }
 
