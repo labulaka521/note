@@ -64,7 +64,6 @@ ROLLBACK [WORK] [AND [NO] CHAIN] [[NO] RELEASE]  回滚
 SET AUTOCOMMIT = {0 | 1}    开启自动提交
 ``` 
 
-
 #### 自动提交(AUTOCOMMIT)
 默认采用自动提交模式。
 ```sql
