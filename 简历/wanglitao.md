@@ -14,7 +14,7 @@
   负责日常故障的维护、运维平台工具的开发，平台开发使用的主要技术栈是`Python+Flask+Vue+Element`，还有一些辅助的工具是使用Golang开发，主要功能有主机资产与网络资产，服务器和交换机配置更改，公网IP开放端口检查，网络流量监控，内网镜像站点等。
 
 ## 项目经历
-- 任务调用平台[crocodile](https://github.com/labulaka521/crocodile)  
+- 分布式任务调用平台[crocodile](https://github.com/labulaka521/crocodile)  
   后端基于`Go`的微服务框架[go-micro](https://github.com/micro/go-micro)，前端采用前端`Vue+Element`  
   方便的在前端页面中对任务进行增加、删除、修改、查看、停止任务的调度、立即运行任务、停止正在执行任务，并且可以查看任务的执行日志，每个任务绑定一个执行器，执行器关联主机，任务只可以在关联的主机上运行，为了防止别人的误操作添加了权限验证，普通用户只可以对自已创建的任务进行修改。
 
@@ -30,8 +30,8 @@
 - 熟悉`Golang`、`Python`、`Shell`编程语言
 - 熟悉`Go-Micro`、`Gin`，阅读过框架部分模块的代码
 - 熟悉`Linux`、`Docker`的使用
-- 熟练使用`Mysql`、`Redis`数据库
-- 熟悉基本的数据结构与算法
+- 熟练使用`Mysql`、`Redis`、`MongoDB`、`Etcd`
+- 熟悉数据结构与算法
 - 熟悉`HTTP`协议,对`HTTP2`也有一些了解
 
 ## 自我评价

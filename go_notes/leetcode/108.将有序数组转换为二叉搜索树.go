@@ -40,6 +40,19 @@
  * }
  */
 func sortedArrayToBST(nums []int) *TreeNode {
-    
+	// 二分法
+	
+	return buildTree(nums,0,len(nums)-1)
+}
+
+func buildTree(nums []int,l,r int) *TreeNode {
+	if r < l {
+		return nil
+	}
+	mid := l + (r-l)/2
+	node := &TreeNode{Val: nums[mid]}
+	node.Left = buildTree(nums,l,mid-1)
+	node.Right = buildTree(nums,mid+1,r)
+	return node
 }
 
