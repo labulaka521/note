@@ -63,6 +63,11 @@ COMMIT [WORK] [AND [NO] CHAIN] [[NO] RELEASE]  提交
 ROLLBACK [WORK] [AND [NO] CHAIN] [[NO] RELEASE]  回滚
 SET AUTOCOMMIT = {0 | 1}    开启自动提交
 ``` 
+默认的隔离级别是REPEATABLE READ，并且在此隔离级别更进一步，通过多版本并发控制(MVCC)解决不可重复读，加上间隙锁解决幻读。因此InnoDB的RR隔离级别其实实现了串行化的效果。事务的隔离性是通过锁实现，而事务的原子性、一致性、持久性是通过事务日志实现。redo和undo  
+- redo log  
+  
+- undo log
+
 
 #### 自动提交(AUTOCOMMIT)
 默认采用自动提交模式。
