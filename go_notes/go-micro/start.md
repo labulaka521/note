@@ -329,7 +329,7 @@ func (s *rpcServer) Start() error {
 	Loop:
 		for {
 			select {
-			// register self on interval
+			// 如果没有设置注册间隔，这里会阻塞
 			case <-t.C:
 				s.RLock()
 				registered := s.registered

@@ -31,7 +31,6 @@ Trace
 
 ## Span间关系
 一个Span可以与一个后者多个SpanContexts存在因果关系。Opentracing目前定义了两种关系：ChildOf(父子)和FollowsFrom(跟随)。
-
 - ChildOf引用
   一个span可能是一个父级span的孩子，父级span某种程度依赖子span
   - 

@@ -1,7 +1,6 @@
-# RPC调用
+# RPC调用源码
 
 ## 注册handler
-
 注册handler这个文件是由proto文件生成的*.micro.go文件主要目的是将handler注册到创建的server中，
 ```go
 func RegisterActuatorHandler(s server.Server, hdlr ActuatorHandler, opts ...server.HandlerOption) error {
@@ -32,7 +31,14 @@ type Handler interface {
 	Options() HandlerOptions
 }
 ```
-这个接口是一个请求handler，再往下走,实际处理实现的接口是这个函数，这个函数利用反射取出这个struct的所有方法，这些方法也实现了proto中定义服务的方法，然后包装到一个struct`rpcHandler`中，这个结构体也实现了`server.Handler这个接口`
+这个接口是处理请求handle，函数的调用链
+```
+s.NewHandler   
+  - s.router.NewHandler
+  - newRpcHandler
+```
+newRpchandler通过反射将传入的struct的方法提取出来放在`rpcHandler`这个结构体中，这个结构体实现了`server.Handler`这个接口，
+
 ```go
 func newRpcHandler(handler interface{}, opts ...HandlerOption) Handler {
 	options := HandlerOptions{
@@ -69,7 +75,7 @@ func newRpcHandler(handler interface{}, opts ...HandlerOption) Handler {
 	}
 }
 ```
-然后看`s.Handle`这个方法 这个比较简单就是将返回的Handler保存在route中，然后将handler的name作为key，保存在rpcServer的handlers中
+下面是Handle方法这个函数先把，所有的方法通过反射取出所有的参数、类型等信息保存在router中的serviceMap中，然后再将路由保存在服务的handlers中
 ```go
 func (s *rpcServer) Handle(h Handler) error {
 	s.Lock()
@@ -84,7 +90,7 @@ func (s *rpcServer) Handle(h Handler) error {
 	return nil
 }
 ```
-进入route.Handle,最终handle信息通过反射得到所有的方法后，放在了serviceMap这个结构里
+进入route.Handle,最终handle信息通过反射得到所有的方法后，放在了serviceMap中，具体的方法是放在了`methodType`这个结构体中，这个结构体定义了保存了方法的参数，类型等各种类型
 ```go
 func (router *router) Handle(h Handler) error {
 	router.mu.Lock()
@@ -105,7 +111,7 @@ func (router *router) Handle(h Handler) error {
 	s.typ = reflect.TypeOf(rcvr)
 	s.rcvr = reflect.ValueOf(rcvr)
 
-	// check name
+	// 检查是否已经保存
 	if _, present := router.serviceMap[h.Name()]; present {
 		return errors.New("rpc.Handle: service already defined: " + h.Name())
 	}
@@ -113,29 +119,30 @@ func (router *router) Handle(h Handler) error {
 	s.name = h.Name()
 	s.method = make(map[string]*methodType)
 
-	// Install the methods
+	// 将所有的方法提取出来
 	for m := 0; m < s.typ.NumMethod(); m++ {
+		// 方法
 		method := s.typ.Method(m)
+		// 提取
 		if mt := prepareMethod(method); mt != nil {
 			s.method[method.Name] = mt
 		}
 	}
 
-	// Check there are methods
+	// 检查方法是否实现
 	if len(s.method) == 0 {
 		return errors.New("rpc Register: type " + s.name + " has no exported methods of suitable type")
 	}
 
-	// save handler
+	// 将方法的各种参数保存在这个结构中去
 	router.serviceMap[s.name] = s
 	return nil
 }
 ```
-总体来说就是将实现了接口的所有方法注册到新建的server 里，然后供后面的启动，请求使用
+总体来说就是将实现了接口的所有方法注册到新建的server里，然后供后面的启动，请求使用
 
 ## 启动服务等待连接
-查看`server.Run`方法进入这个方法里，最终调用的是`server.rpcServer`中的`Start`方法
-
+查看`server.Run`方法进入这个方法里，最终调用的是`server.rpcServer`中的`Start`方法，
 ```go
 func (s *rpcServer) Start() error {
 	registerDebugHandler(s)
@@ -154,7 +161,7 @@ func (s *rpcServer) Start() error {
             // ServerConn是处理连接的函数
             // 启动transport服务
             // 接收到client的请求后调用请求的函数处理请求
-            // 这里就实现了等待
+            // 这里就实现了等待调用方调用请求
 			err := ts.Accept(s.ServeConn)
 
 			// TODO: listen for messages
@@ -230,7 +237,7 @@ func (c *jobService) CreateJob(ctx context.Context, in *Task, opts ...client.Cal
 	return out, nil
 }
 ```
-下来看一下Call这个函数，客户端调用服务的时候可以指定调用的node 传入node的ip地址就可以
+下来看一下Call这个函数，客户端调用服务的时候可以传入指定的选项,这个函数先选择一个node，然后去调用，调用的时候可以使用重试的机制保证客户端调用正常返回
 ```go
 // 调用
 func (r *rpcClient) Call(ctx context.Context, request Request, response interface{}, opts ...CallOption) error {
@@ -497,8 +504,7 @@ func (r *rpcClient) call(ctx context.Context, node *registry.Node, req Request, 
 ```
 请求指定方法封装参数->编码数据->请求连接->发送数据->接收响应数据
 
-CreateJob --> newRequest封装请求数据-->调用Call调用服务(选择一个服务,执行失败会重试)-->调用call-->封装请求数据-->stram.Send发送数据-->stream.Recv接收数据
-
+创建一个定义的服务--> newRequest封装请求数据-->选择node节点-->编码数据-->调用服务(失败重试)
 
 ## 服务端响应
 服务端接收客户端请求
@@ -507,14 +513,13 @@ CreateJob --> newRequest封装请求数据-->调用Call调用服务(选择一个
 // listen for connections
 err := ts.Accept(s.ServeConn)
 ```
-ts.Accept主要是注册了一个handle每次请求来的时候就会在这里处理请求
+ts.Accept实现了一个handler这个会处理所有的请求，
 ```go
 func (h *httpTransportListener) Accept(fn func(Socket)) error {
-	// create handler mux
+	//  创建一个请求多路复用器
 	mux := http.NewServeMux()
 
-    // 注册transport handler
-    // 这里注册了个url为/的handle来等待处理请求
+	// 请求多路复用器是匹配所有的相似的路由所以这个的url路由是/所以会匹配所有的请求
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		var buf *bufio.ReadWriter
 		var con net.Conn
@@ -548,7 +553,7 @@ func (h *httpTransportListener) Accept(fn func(Socket)) error {
 		// save the request
 		ch := make(chan *http.Request, 1)
 		ch <- r
-        // fn是传入的参数，
+        // fn是传入的参数，这个
 		fn(&httpTransportSocket{
 			ht:     h.ht,
 			w:      w,
@@ -585,7 +590,7 @@ func (h *httpTransportListener) Accept(fn func(Socket)) error {
 	return srv.Serve(h.listener)
 }
 ```
-`s.ServeConn`处理请求的函数
+ts.Accept只是等待请求连接，`s.ServeConn`才是处理请求的函数。
 ```go
 func (s *rpcServer) ServeConn(sock transport.Socket) {
 	defer func() {
@@ -600,7 +605,7 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 
 	for {
 		var msg transport.Message
-        // 接收传输的消息
+        // 接收请求的消息
 		if err := sock.Recv(&msg); err != nil {
 			return
 		}
@@ -641,10 +646,10 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			ct = DefaultContentType
 		}
 
-		// setup old protocol
+		// 请求协议
 		cf := setupProtocol(&msg)
 
-		// no old codec
+		// 请求协议
 		if cf == nil {
 			// TODO: needs better error handling
 			var err error
@@ -705,8 +710,8 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		}
 
         // TODO: handle error better
-        // 请求服务去r.ServerRequest中去看看
-		if err := handler(ctx, request, response); err != nil {
+        // 请求服务端
+		if err := r.ServeRequest(ctx, request, response); err != nil {
 			// write an error response
 			err = rcodec.Write(&codec.Message{
 				Header: msg.Header,
@@ -731,7 +736,7 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 }
 
 ```
-`ServeRequest`也是为请求前作准备
+`ServeRequest`也是为请求前作准备，这函数将请求服务，类型，等信息取出来
 ```go
 func (router *router) ServeRequest(ctx context.Context, r Request, rsp Response) error {
     sending := new(sync.Mutex)
@@ -759,7 +764,7 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 
 	function := mtype.method.Func
 	var returnValues []reflect.Value
-
+	// 请求所需要的数据
 	r := &rpcRequest{
 		service:     req.msg.Target,
 		contentType: req.msg.Header["Content-Type"],
@@ -767,7 +772,7 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 		endpoint:    req.msg.Endpoint,
 		body:        req.msg.Body,
 	}
-	// 是否是流式rpc
+	// 不是流式RPC
 	if !mtype.stream {
 		fn := func(ctx context.Context, req Request, rsp interface{}) error {
 			returnValues = function.Call([]reflect.Value{s.rcvr, mtype.prepareContext(ctx), reflect.ValueOf(argv.Interface()), reflect.ValueOf(rsp)})
@@ -776,7 +781,6 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 			if err := returnValues[0].Interface(); err != nil {
 				return err.(error)
 			}
-
 			return nil
 		}
 
@@ -789,9 +793,7 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 		return router.sendResponse(sending, req, replyv.Interface(), cc, true)
 	}
 
-	// declare a local error to see if we errored out already
-	// keep track of the type, to make sure we return
-	// the same one consistently
+	// 流式请求
 	rawStream := &rpcStream{
 		context: ctx,
 		codec:   cc.(codec.Codec),
