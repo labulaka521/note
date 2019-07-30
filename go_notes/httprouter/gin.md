@@ -1,4 +1,4 @@
-## `Gin`执行过程分析
+## `Gin`请求过程分析
 
 [Gin](github.com/gin-gonic/gin)在路由管理使用了基于`radix tree`的路由框架[httprouter](https://github.com/julienschmidt/httprouter),
 ```go
@@ -6,7 +6,7 @@ r := gin.New()
 r.Use(gin.Logger(), gin.Recovery())
 r1 = r.Group("/actuator")
 ```
-`gin.New`是创建一个`Engine`实例,这是此框架的核心，包含了框架需要运行的全部配置
+`gin.New`是创建一个`Engine`实例,这是此框架的核心，包含了框架运维性的一些配置，
 
 ```go
 type Engine struct {
@@ -63,7 +63,7 @@ type RouterGroup struct {
 }
 ```
 
-可以看见`RouterGroup`和`Engine`相互嵌套，这样Engine也就有了`RouterGroup`的方法  
+可以看见`RouterGroup`和`Engine`相互嵌套，这样Engine也就有了`RouterGroup`的方法    
 `Group()`用来创建一个路由组
 ```go
 func (group *RouterGroup) Group(relativePath string, handlers ...HandlerFunc) *RouterGroup {
@@ -121,7 +121,7 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// 初始化Context对象
 	c.reset()
 	// 处理请求
-	// 这一步会去trees中寻找对应路由的handler
+	// 这一步会去trees中寻找对应路由的handler，然后运行
 	engine.handleHTTPRequest(c)
 	// 请求完毕后又将context对象放入请求池 减少垃圾回收的压力
 	engine.pool.Put(c)
@@ -190,7 +190,8 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 	serveError(c, http.StatusNotFound, default404Body)
 }
 ```
-这个方法主要的功能就是寻找路由，如果寻找到了就将路由的参数和handler放在Context这个上下文中，然后通过`c.Next`执行所有的handler
+`handleHTTPRequest`主要的功能就是寻找路由，如果寻找到了就将路由的参数和handler放在Context这个上下文中，然后通过`c.Next`执行所有的handler
+
 ```go
 func (c *Context) Next() {
 	c.index++
@@ -202,5 +203,5 @@ func (c *Context) Next() {
 	}
 }
 ```
-当运行第一个handler这是这个路由最外层的middle，每个middle中必须包含一个`c.Next`来处理接下来的流程，Context初始化index为-1，然后进入第一个middle时，会加+，然后判断当前index是否大于handler的总数，如果没有大于就取得一个handler `c.handlers[c.index](c)`，然后传入Context运行，然后直到最后一个真正处理业务逻辑的handler后，将执行的结果响应，当请求响应后，然后会把响应的请求的，重新放入连接池，这样做的目的就是为了对象复用减轻gc的压力，
+当运行第一个handler这是这个路由最外层的middle，每个middle中必须包含一个`c.Next`来处理接下来的流程，Context初始化index为-1，然后进入第一个middle时，会加+1，然后判断当前index是否大于handler的总数，如果没有大于就取得一个handler `c.handlers[c.index](c)`，然后传入Context运行，然后直到最后一个真正处理业务逻辑的handler后，将执行的结果响应，当请求响应后，然后会把响应的请求的，重新放入连接池，这样做的目的就是为了对象复用减轻gc的压力
 

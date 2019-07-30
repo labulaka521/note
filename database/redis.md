@@ -414,13 +414,94 @@ max-slaves-max-log 10
 
 # 应用场景
 
-## 缓存
-## 消息队列
-## 时间轴
-## 排行榜
-## 计数器
+## 缓存 string
+## 消息队列 list BLPOP BRPOP
+## 时间轴 list
+## 排行榜 zset ZINCRBY ZREVRANGE ZRANGE
+## 计数器 incr
 ## 分布式锁
   - EX|PX 设置键的过期时间(秒|毫秒)
   - NX|XX：当设置为NX时，仅当 key 存在时才进行操作，设置为XX时，仅当 key 不存在才会进行操作  
   `set key "lock" EX 1 XX`
   返回`true`就是获取了锁
+
+
+# Redis数据结构
+
+- SDS(simple dynamic string)：简单动态字符串
+- ADList(A generic doubly linked list)：双向链表
+- dict(Hash Tables)：字典
+- intset：整数集合
+- ziplist：压缩表
+-quicklist：快速列表（双向链表和压缩表二合一的复杂数据结构）
+- skiplist：跳跃链表
+
+## 字符串(简单动态字符串)
+```c
+  /*  
+ * 保存字符串对象的结构  
+ */  
+struct sdshdr {  
+
+    // 用于记录buf中已经使用的空间长度
+    int len;  
+  
+    // buf 中剩余可用空间的长度，初次分配空间一般没有空余，在对字符串修改的时候，会有剩余空间出现  
+    int free;  
+  
+    // 字符数组，用于记录我们的字符串 
+    char buf[];  
+};
+```
+![](../image/redis-string.png)
+
+区别
+
+|c字符串|SDS|
+|-|-|
+|获取字符串长度复杂度为O(n)|获取字符串长度复杂度为O(1)|
+|可能会缓冲溢出|不会发生溢出|
+|修改字符串长度N次必然需要执行N次内存分配|最多执行N次内存分配|
+|只可以保存内存数据|文本数据、二进制文件
+
+## 链表
+- 双向链表
+- 压缩表
+- 快速列表
+链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活的调整链表的长度 
+
+每一个链表节点可以使用listNode结构表示
+```c
+typedef struct listNode{
+      struct listNode *prev;
+      struct listNode * next;
+      void * value;  
+}
+
+typedef struct list{
+    //表头节点
+    listNode  * head;
+    //表尾节点
+    listNode  * tail;
+    //链表长度
+    unsigned long len;
+    //节点值复制函数
+    void *(*dup) (void *ptr);
+    //节点值释放函数
+    void (*free) (void *ptr);
+    //节点值对比函数
+    int (*match)(void *ptr, void *key);
+}
+```
+
+特性
+- 双端
+- 无环
+- 表头和表尾
+- 长度计数器
+- 多态
+
+## 字典
+Redis使用哈希表作为作为字典的底层实现，每个字典都有两个哈希表，一个正常使用，另一个用处是重新散列实现对哈希表的扩展或者压缩
+
+使用链表来解决键冲突问题，被分配到同一个索引上的多个键值会构成一个单项链表

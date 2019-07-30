@@ -239,3 +239,116 @@ func (e *entry) delete() (hadValue bool) {
 
 sync.map操作图解
 ![](../image/go-micro.svg)
+
+
+# sync.Pool
+不可以用来保存函数状态的对象，例如socket，例如socket连接  
+常用来保存一些不保存状态的对象，例如在gin这个框架中，Context对象就是使用pool对象池复用的，每次请求完成后，将Context对象放入对象池中，可以减少对象的创建，复用对象，减轻GC的压力   
+pool在每次GC前会清理掉
+
+Pool的结构
+```go
+type Pool struct {
+	noCopy noCopy
+	// 指向一个数组 数组的元素类型是poolLocal
+	local     unsafe.Pointer // local fixed-size per-P pool, actual type is [P]poolLocal
+	// 本地的数组 大小等于P
+	localSize uintptr        // size of the local array
+
+	// New optionally specifies a function to generate
+	// a value when Get would otherwise return nil.
+	// It may not be changed concurrently with calls to Get.
+	New func() interface{}
+}
+
+type poolLocal struct {
+	poolLocalInternal
+
+	// Prevents false sharing on widespread platforms with
+	// 128 mod (cache line size) = 0 .
+	pad [128 - unsafe.Sizeof(poolLocalInternal{})%128]byte
+}
+
+// Local per-P Pool appendix.
+type poolLocalInternal struct {
+	// 存储一个对象读取不需要加锁
+	private interface{} 
+	// 是一个数组 读写需要加锁
+	shared  []interface{}
+	// 对shared加锁
+	Mutex             
+}
+```
+Get操作
+```go
+func (p *Pool) Get() interface{} {
+	if race.Enabled {
+		race.Disable()
+	}
+	// 先返回本地P上的pool
+	l := p.pin()
+	// 私有的
+	x := l.private
+	l.private = nil
+	runtime_procUnpin()
+	if x == nil {
+		// 从shared中取
+		l.Lock()
+		last := len(l.shared) - 1
+		if last >= 0 {
+			x = l.shared[last]
+			l.shared = l.shared[:last]
+		}
+		l.Unlock()
+		if x == nil {
+			x = p.getSlow()
+		}
+	}
+	if race.Enabled {
+		race.Enable()
+		if x != nil {
+			race.Acquire(poolRaceAddr(x))
+		}
+	}
+	// 没有找到 新建
+	if x == nil && p.New != nil {
+		x = p.New()
+	}
+	return x
+}
+```
+Put操作
+```go
+// Put adds x to the pool.
+func (p *Pool) Put(x interface{}) {
+	if x == nil {
+		return
+	}
+	if race.Enabled {
+		if fastrand()%4 == 0 {
+			// Randomly drop x on floor.
+			return
+		}
+		race.ReleaseMerge(poolRaceAddr(x))
+		race.Disable()
+	}
+	// 拿到当前P对应的pool
+	l := p.pin()
+	// 如果私有的位置为空则放在私有的位置
+	if l.private == nil {
+		// 放置在私有位置
+		l.private = x
+		x = nil
+	}
+	runtime_procUnpin()
+	// 存放在共享的区域中
+	if x != nil {
+		l.Lock()
+		l.shared = append(l.shared, x)
+		l.Unlock()
+	}
+	if race.Enabled {
+		race.Enable()
+	}
+}
+```
