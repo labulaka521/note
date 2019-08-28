@@ -352,3 +352,11 @@ func (p *Pool) Put(x interface{}) {
 	}
 }
 ```
+
+
+# Mutex
+
+先使用cas尝试获取锁，如果获取到就直接返回，如果没有获取到，然后就是使用自旋锁获取，如果还是没有获取到就通过信号量让当前G
+
+# Crond
+条件变量 主要用于多个goroutinue等待另外一个goroutinue的通知信息。

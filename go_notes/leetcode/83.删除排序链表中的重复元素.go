@@ -22,7 +22,7 @@ func deleteDuplicates(head *ListNode) *ListNode {
 			head.Next = head.Next.Next
 			continue
 		}
-		// 不想等转移到下一节点
+		// 不想等 转移到下一节点
 		head = head.Next
 	}
 

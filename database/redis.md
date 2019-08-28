@@ -161,12 +161,12 @@ UNSUBSCRIBE chanel
                 不会读取正在使用的AOF文件，而通过将内存中的数据以命令的方式保存到临时文件中，完成之后替换原来的AOF文件
             缺点 文件会越来越大 
 ## RDB配置 
-SAVE "" 关闭rdb
-stop-writes-on-bgsave-error yes
-rdbcompression yes
-rdbchecksum yes
-dbfilename dump.rdb
-dir /var/lib/redis
+SAVE "" 关闭rdb  
+stop-writes-on-bgsave-error yes  
+rdbcompression yes  
+rdbchecksum yes  
+dbfilename dump.rdb  
+dir /var/lib/redis  
 
 ## AOF配置
     命令后将命令记录到文件
@@ -505,3 +505,49 @@ typedef struct list{
 Redis使用哈希表作为作为字典的底层实现，每个字典都有两个哈希表，一个正常使用，另一个用处是重新散列实现对哈希表的扩展或者压缩
 
 使用链表来解决键冲突问题，被分配到同一个索引上的多个键值会构成一个单项链表
+
+
+
+## 缓存穿透
+查询一条数据库不存在的数据的数据时，也就是缓存和数据库都查询不到这条数据，但请求还是会打到数据库
+
+解决方案
+
+将不存在的key缓存起来，值设置为Null
+
+## 缓存雪崩
+大量的请求同时查询一个key时，这是key失效了，就会导致大量的请求打到数据库中，
+
+在缓存中查询数据的时候使用互斥锁锁住它，但是降低了并发量
+
+双缓存
+
+- 从缓存A读数据库，有则直接返回
+- A没有数据，直接从B读数据，直接返回，并且异步启动一个更新线程。
+- 更新线程同时更新缓存A和缓存B
+
+
+
+
+## redis 和 memcached有什么区别
+redis的线程模型是什么？为什么单线程的Redis比多线程的memcached效率要高很多
+
+- redis 支持复杂的数据结构
+- redis 原生支持集群
+
+redis的线程模型
+redis 内部使用文件事件处理器，这个文件事件处理器是单线程的，所以redis是单线程的模型。采用IO多路复用机制同时监听多个socket，根据socket上的事件来选择对应的事件处理器进行处理
+
+# Reactor
+![](../image/reactor.jpeg)
+
+IO多路复用模块会监听多个FD，当这些FD产生操作时，会向文件事件分发器传送事件，然后文件事件分发器在收到事件之后，会根据事件的类型将事件分发给对应的handler
+
+
+内存操作  
+基于非阻塞的IO多路复用机制  
+单线程
+
+
+redis 为什么是单线程的
+- redis是基于内存的操作，cpu不是redis的瓶颈，只有可能是机器内存大小和网络宽带 并且单线程容易实现。不需要各种锁的性能消耗

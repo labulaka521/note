@@ -204,3 +204,46 @@ Go 语言中读取 map 有两种语法：带 comma 和 不带 comma,编译器分
 func mapaccess1(t *maptype, h *hmap, key unsafe.Pointer) unsafe.Pointer
 func mapaccess2(t *maptype, h *hmap, key unsafe.Pointer) (unsafe.Pointer, bool)
 ```
+
+
+#### map为什么是无序的
+```go
+func mapiterinit(t *maptype, h *hmap, it *hiter) {
+	// ...
+	it.t = t
+	it.h = h
+
+	// grab snapshot of bucket state
+	it.B = h.B
+	it.buckets = h.buckets
+	if t.bucket.kind&kindNoPointers != 0 {
+		// Allocate the current slice and remember pointers to both current and old.
+		// This preserves all relevant overflow buckets alive even if
+		// the table grows and/or overflow buckets are added to the table
+		// while we are iterating.
+		h.createOverflow()
+		it.overflow = h.extra.overflow
+		it.oldoverflow = h.extra.oldoverflow
+	}
+
+	// 使用一个随机数来决定从哪个桶开始遍历
+	r := uintptr(fastrand())
+	if h.B > 31-bucketCntBits {
+		r += uintptr(fastrand()) << 31
+	}
+	it.startBucket = r & bucketMask(h.B)
+	it.offset = uint8(r >> h.B & (bucketCnt - 1))
+
+	// iterator state
+	it.bucket = it.startBucket
+
+	// Remember we have an iterator.
+	// Can run concurrently with another mapiterinit().
+	if old := h.flags; old&(iterator|oldIterator) != iterator|oldIterator {
+		atomic.Or8(&h.flags, iterator|oldIterator)
+	}
+
+	mapiternext(it)
+}
+
+```

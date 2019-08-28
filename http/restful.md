@@ -1,5 +1,9 @@
 RESTful 架构详解
 
+>看Url就知道要什么  
+>看http method就知道干什么  
+>看http status code就知道结果如何
+
 ## 协议
 API与用户的通信协议使用`HTTPS`
 ## 域名

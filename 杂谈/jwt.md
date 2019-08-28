@@ -65,5 +65,3 @@ signature = HS256(base64(header).base64(payload), secret)
 然后将三个字符串使用`.`相连接 ，就构成了jwt
 
 请求头中加入Authorization
-
-

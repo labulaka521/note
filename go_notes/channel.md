@@ -4,7 +4,7 @@ cannel和goroutinue是go语言并发编程的两大基石，Goroutinue用于执�
 channel在goroutinue间架起了一条管道，在管道里传输数据，实现goroutinue间的通信，由于它是线程安全的，channel 还提供“先进先出”的特性；它还能影响 goroutine 的阻塞和唤醒。
 
 ## 为什么要channel
-Go通过channel实现CSP通信模型，主要用于goroutinue之间的消息传递和事件通知
+Go通过channel实现CSP通信模型，主要用于goroutinue之间的消息传递和事件通知   
 
 有了 channel 和 goroutine 之后，Go 的并发编程变得异常容易和安全，得以让程序员把注意力留到业务上去，实现开发效率的提升
 
@@ -56,6 +56,17 @@ func makechan(t *chantype, size int) *hchan {
     }
 }
 ```
+
+
+## Channel
+- 线程安全
+  hchan `mutex`
+- 没有缓冲的channel
+  发送者直接在接收者的栈上写入数据  
+  接收者从sudog中接收数据
+- 先进先出 环形队列
+- 阻塞  
+  当写入不了数据或者读取不到数据，会将自已挂起然后放在recvq/sendq中
 
 ## 应用
 - 停止信号
